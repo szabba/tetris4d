@@ -38,7 +38,14 @@ add :: Point -> Point -> Point
 p1 `add` p2 = zipWith (+) p1 p2
 
  
--- All possible blocks!
+-- Rotation
+
+type Axis = Int
+type Around = [Axis]
+data RotationDir = Left | Right
+
+
+-- Valid blocks generation
 
 zeros :: Int -> [Int]
 zeros n = take n $ repeat 0
@@ -53,7 +60,7 @@ mapply :: (Integral i) => i -> (t -> t) -> t -> t
 mapply 0 _ a = a
 mapply n f a = mapply (n - 1) f (f a)
 
-  -- dimmensions -> pointsInBlock -> legalBlocks
+  -- dimmensions -> pointCount -> legalBlocks
 blockShapes :: Int -> Int -> [Block]
 blockShapes n l = map reverse $ mapply (l - 1) (blockShapes' n) [[zeros n]]
   where
@@ -98,9 +105,17 @@ fullView (zLen, oLen) world = map (view world) [(i, j)
     | i <- [0..(zLen-1)], j <- [0..(oLen-1)]]
    
 
--- Rotation
 -- Painting
 -- Event handling
+
+eventLoop :: IO ()
+eventLoop = SDL.pollEvent >>= handle
+
+handle :: SDL.Event -> IO ()
+handle (KeyUp _) = SDL.quit >> return ()
+handle _         = eventLoop
+
+
 -- Main function
 
   -- Bare in mind that this is a placeholder.
@@ -119,8 +134,8 @@ main = do
     SDL.flip screen
 
     eventLoop
-    SDL.quit
-  where
-    eventLoop = SDL.waitEventBlocking >>= checkEvent
-    checkEvent (KeyUp _) = return ()
-    checkEvent _         = eventLoop
+--    SDL.quit
+--  where
+--    eventLoop = SDL.waitEventBlocking >>= checkEvent
+--    checkEvent (KeyUp _) = return ()
+--    checkEvent _         = eventLoop

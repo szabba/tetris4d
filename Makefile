@@ -1,4 +1,4 @@
-all: tetris4d.cabal Tetris4D.hs
+all: tetris4d.cabal Main.hs
 	cabal configure	
 	cabal build
 	cp dist/build/tetris4d/tetris4d .
