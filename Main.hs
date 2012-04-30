@@ -1,9 +1,6 @@
 module Main where
 
 
-import Control.Monad.ST
-import Data.Array.ST
-
 import Graphics.UI.SDL as SDL
 import Graphics.UI.SDL.Image as SDLi
 
@@ -37,12 +34,54 @@ block `canFallFurther` well = any (block `stopsAt`) well
 add :: Point -> Point -> Point
 p1 `add` p2 = zipWith (+) p1 p2
 
+inverse :: Point -> Point
+inverse = map ((-1) *)
  
 -- Rotation
 
 type Axis = Int
-type Around = [Axis]
-data RotationDir = Left | Right
+type Around = (Point, [Axis])
+data RotationDir = Clockwise | Counter
+
+  -- Beware: if the list of fixed axes is shorter than the length of a point
+  -- minus one, it will behave in a funny way.
+left :: [Axis] -> Point -> Point
+
+left fixedAxes r = map rotatedAt indices
+  where
+    rotatedAt :: Int -> Int
+    rotatedAt i
+        | freeAxes !! 0 == i = - r !! (freeAxes !! 1)
+        | freeAxes !! 1 == i =   r !! (freeAxes !! 0)
+        | otherwise          =   r !! i
+
+    freeAxes :: [Axis]
+    freeAxes = filter (not . (`elem` fixedAxes)) indices
+
+    indices = [0..lenR - 1]
+
+    lenR = length r
+
+right :: [Axis] -> Point -> Point
+right fixedAxes = mapply 3 (left fixedAxes)
+
+rotatePoint :: RotationDir -> [Axis] -> Point -> Point
+rotatePoint Clockwise = left
+rotatePoint Counter   = right
+
+rotate :: RotationDir -> [Axis] -> Block -> Block
+rotate rotDir fixedAxes = map $ rotatePoint rotDir fixedAxes
+  where
+    center :: Block -> Point
+    center = map average . translocate
+
+    average :: [Int] -> Int
+    average iS = sum iS `div` length iS
+
+    translocate :: [[a]] -> [[a]]
+    translocate = map reverse . foldl foldMe (repeat [])
+      where
+        foldMe = zipWith $ Prelude.flip (:)
 
 
 -- Valid blocks generation
@@ -134,8 +173,3 @@ main = do
     SDL.flip screen
 
     eventLoop
---    SDL.quit
---  where
---    eventLoop = SDL.waitEventBlocking >>= checkEvent
---    checkEvent (KeyUp _) = return ()
---    checkEvent _         = eventLoop
